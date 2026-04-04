@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where node:*)",
+      "Bash(PATH=\"$PATH:/c/Program Files/nodejs\" node --version)",
+      "Bash(PATH=\"$PATH:/c/Program Files/nodejs\" npx --version)",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" --version)",
+      "Bash(\"/c/Users/Eimantas/AppData/Roaming/nvm/v22.14.0/node.exe\" --version)",
+      "Read(//c/Users/Eimantas/AppData/Roaming/**)",
+      "Bash(cmd.exe /c \"node --version\")",
+      "Bash(cmd.exe /c \"where npx\")",
+      "Bash(cmd.exe /c \"echo %PATH%\")",
+      "Bash(tr ';' '\\\\n')",
+      "Bash(cmd.exe /c \"where node\")",
+      "Bash(cmd.exe /c \"where python\")",
+      "Bash(cmd.exe /c \"where php\")",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -Command \"Write-Host ''test''\")",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -Command \"& { try { $l = New-Object System.Net.HttpListener; $l.Prefixes.Add\\(''http://localhost:3000/''\\); $l.Start\\(\\); Write-Host ''OK''; $l.Stop\\(\\) } catch { Write-Host $_.Exception.Message } }\")",
+      "Bash(powershell.exe -Command \"Stop-Process -Id \\(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue\\).OwningProcess -Force -ErrorAction SilentlyContinue\")"
+    ]
+  }
+}
