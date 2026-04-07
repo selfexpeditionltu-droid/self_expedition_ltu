@@ -6,9 +6,3 @@ build
 .env.local
 .vercel
 .DS_Store
-
-# Ignore videos
-*.MOV
-*.mov
-*.mp4
-*.MP4
