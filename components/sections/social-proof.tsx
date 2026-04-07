@@ -1,10 +1,13 @@
 const posts = [
-  { id: 1, src: "/materials/IMG_4660.JPG", caption: "Grupė lauke" },
-  { id: 2, src: "/materials/IMG_5665.JPG", caption: "Ugnies kūrimas" },
-  { id: 3, src: "/materials/IMG_3802.JPG", caption: "Orientavimasis miške" },
-  { id: 4, src: "/materials/foto-1-5.jpg", caption: "Žygis per sniegą" },
-  { id: 5, src: "/materials/IMG_3841.JPG", caption: "Šaudymo rezultatai" },
-  { id: 6, src: "/materials/IMG_4951.PNG", caption: "Fizinis rengimas" },
+  { id: 1, src: "/materials/foto-1-5.jpg", caption: "Žygis per sniegą", type: "image" },
+  { id: 2, src: "/materials/copy_CECF4970-587C-41EF-9C7A-1F68C86D6FA3.mp4", caption: "Kovinis šaudymas", type: "video" },
+  { id: 3, src: "/materials/IMG_2445.JPG", caption: "Ugnies kurimas", type: "image" },
+  { id: 4, src: "/materials/IMG_2548.JPG", caption: "Kovinis šaudymas", type: "image" },
+  { id: 5, src: "/materials/IMG_4528.JPG", caption: "Psichologinis išgyvenimas", type: "image" },
+  { id: 6, src: "/materials/IMG_5846.JPG", caption: "Išgyvenimas nelaisvėje", type: "image" },
+  { id: 7, src: "/materials/IMG_4951.PNG", caption: "Nusileidimas virve", type: "image" },
+  { id: 8, src: "/materials/IMG_3422.JPG", caption: "Ištvermės stiprinimas", type: "image" },
+  { id: 9, src: "/materials/IMG_5665.JPG", caption: "Ugnies kūrimas", type: "image" },
 ];
 
 const testimonials = [
@@ -146,7 +149,8 @@ export default function SocialProof() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <div className="max-w-4xl mx-auto">
+        <div className="grid grid-cols-3 gap-2">
           {posts.map((post) => (
             <a
               key={post.id}
@@ -156,12 +160,24 @@ export default function SocialProof() {
               className="group relative aspect-square overflow-hidden block"
               style={{ border: "1px solid rgba(200,169,110,0.12)" }}
             >
-              <img
-                src={post.src}
-                alt={post.caption}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                style={{ filter: "contrast(1.1) brightness(0.75) saturate(0.85)" }}
-              />
+              {post.type === "video" ? (
+                <video
+                  src={post.src}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  style={{ filter: "contrast(1.1) brightness(0.75) saturate(0.85)" }}
+                />
+              ) : (
+                <img
+                  src={post.src}
+                  alt={post.caption}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  style={{ filter: "contrast(1.1) brightness(0.75) saturate(0.85)" }}
+                />
+              )}
               {/* Hover overlay */}
               <div
                 className="absolute inset-0 flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -191,6 +207,7 @@ export default function SocialProof() {
               </div>
             </a>
           ))}
+        </div>
         </div>
       </div>
     </section>
