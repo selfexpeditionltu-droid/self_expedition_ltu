@@ -37,44 +37,87 @@ export default function CtaSection() {
     lastname: "",
     phone: "",
     email: "",
-    activity: "",
+    activities: [] as string[],
+    comments: "",
   });
   const [status, setStatus] = useState<FormState>("idle");
   const [consent, setConsent] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
   const [consentError, setConsentError] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ name: "", lastname: "", phone: "", email: "" });
+  const [activityError, setActivityError] = useState(false);
 
   /* Listen for activity pre-selection from the Activities section */
   useEffect(() => {
     const handler = (e: Event) => {
       const activityId = (e as CustomEvent<string>).detail;
-      setForm((prev) => ({ ...prev, activity: activityId }));
+      setForm((prev) => ({
+        ...prev,
+        activities: prev.activities.includes(activityId)
+          ? prev.activities
+          : [...prev.activities, activityId],
+      }));
     };
     window.addEventListener("se:selectActivity", handler);
     return () => window.removeEventListener("se:selectActivity", handler);
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const validatePhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!value.trim()) return "Įveskite telefono numerį.";
+    if (!/^\+?[\d\s\-().]+$/.test(value)) return "Neteisingas telefono numerio formatas.";
+    if (digits.length !== 11) return "Neteisingas telefono numerio formatas.";
+    return "";
+  };
+
+  const validateEmail = (value: string) => {
+    if (!value.trim()) return "Įveskite el. pašto adresą.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return "Neteisingas el. pašto formatas.";
+    return "";
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "name" && fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+    if (name === "lastname" && fieldErrors.lastname) setFieldErrors((prev) => ({ ...prev, lastname: "" }));
+    if (name === "phone" && fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
+    if (name === "email" && fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: "" }));
+  };
+
+  const toggleActivity = (id: string) => {
+    setForm((prev) => {
+      const next = prev.activities.includes(id)
+        ? prev.activities.filter((a) => a !== id)
+        : [...prev.activities, id];
+      if (next.length > 0) setActivityError(false);
+      return { ...prev, activities: next };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!consent) {
-      setConsentError(true);
-      return;
-    }
+    const nameErr = form.name.trim() ? "" : "Įveskite savo vardą.";
+    const lastnameErr = form.lastname.trim() ? "" : "Įveskite savo pavardę.";
+    const phoneErr = validatePhone(form.phone);
+    const emailErr = validateEmail(form.email);
+    const noActivity = form.activities.length === 0;
+    setFieldErrors({ name: nameErr, lastname: lastnameErr, phone: phoneErr, email: emailErr });
+    setActivityError(noActivity);
+    if (!consent) setConsentError(true);
+    if (nameErr || lastnameErr || phoneErr || emailErr || noActivity || !consent) return;
     setConsentError(false);
     setStatus("submitting");
-    trackEvent("registration_form_submit", { activity: form.activity });
+    trackEvent("registration_form_submit", { activity: form.activities.join(", ") });
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, activity: form.activities.join(", "), consentMarketing }),
       });
       if (!res.ok) throw new Error("Request failed");
-      trackLead({ activity: form.activity });
+      trackLead({ activity: form.activities.join(", ") });
       setStatus("success");
     } catch {
       setStatus("error");
@@ -219,10 +262,19 @@ export default function CtaSection() {
                   value={form.name}
                   onChange={handleChange}
                   placeholder="Jonas"
-                  style={inputStyle}
-                  onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
+                  style={{ ...inputStyle, borderColor: fieldErrors.name ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)" }}
+                  onFocus={(e) => (e.target.style.borderColor = fieldErrors.name ? "rgba(224,92,92,0.7)" : "var(--sand)")}
+                  onBlur={(e) => {
+                    const err = form.name.trim() ? "" : "Įveskite savo vardą.";
+                    setFieldErrors((prev) => ({ ...prev, name: err }));
+                    e.target.style.borderColor = err ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)";
+                  }}
                 />
+                {fieldErrors.name && (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "0.35rem" }}>
+                    {fieldErrors.name}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="lastname" style={labelStyle}>Pavardė</label>
@@ -235,10 +287,19 @@ export default function CtaSection() {
                   value={form.lastname}
                   onChange={handleChange}
                   placeholder="Jonaitis"
-                  style={inputStyle}
-                  onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
+                  style={{ ...inputStyle, borderColor: fieldErrors.lastname ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)" }}
+                  onFocus={(e) => (e.target.style.borderColor = fieldErrors.lastname ? "rgba(224,92,92,0.7)" : "var(--sand)")}
+                  onBlur={(e) => {
+                    const err = form.lastname.trim() ? "" : "Įveskite savo pavardę.";
+                    setFieldErrors((prev) => ({ ...prev, lastname: err }));
+                    e.target.style.borderColor = err ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)";
+                  }}
                 />
+                {fieldErrors.lastname && (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "0.35rem" }}>
+                    {fieldErrors.lastname}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -255,10 +316,22 @@ export default function CtaSection() {
                   value={form.phone}
                   onChange={handleChange}
                   placeholder="+370 600 00000"
-                  style={inputStyle}
-                  onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
+                  style={{
+                    ...inputStyle,
+                    borderColor: fieldErrors.phone ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = fieldErrors.phone ? "rgba(224,92,92,0.7)" : "var(--sand)")}
+                  onBlur={(e) => {
+                    const err = validatePhone(form.phone);
+                    setFieldErrors((prev) => ({ ...prev, phone: err }));
+                    e.target.style.borderColor = err ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)";
+                  }}
                 />
+                {fieldErrors.phone && (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "0.35rem" }}>
+                    {fieldErrors.phone}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="email" style={labelStyle}>El. paštas</label>
@@ -271,50 +344,225 @@ export default function CtaSection() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="jonas@mail.lt"
-                  style={inputStyle}
-                  onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
+                  style={{
+                    ...inputStyle,
+                    borderColor: fieldErrors.email ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = fieldErrors.email ? "rgba(224,92,92,0.7)" : "var(--sand)")}
+                  onBlur={(e) => {
+                    const err = validateEmail(form.email);
+                    setFieldErrors((prev) => ({ ...prev, email: err }));
+                    e.target.style.borderColor = err ? "rgba(224,92,92,0.7)" : "rgba(200,169,110,0.25)";
+                  }}
                 />
+                {fieldErrors.email && (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "0.35rem" }}>
+                    {fieldErrors.email}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Row 3: activity dropdown */}
+            {/* Row 3: activity multi-select */}
+            <div className="mb-5">
+              <label style={labelStyle}>Norima veikla <span style={{ color: "rgba(200,169,110,0.5)", fontWeight: 400 }}>(galima rinktis kelias)</span></label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {activities.map((a) => {
+                  const checked = form.activities.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => toggleActivity(a.id)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.6rem",
+                        padding: "0.65rem 0.9rem",
+                        backgroundColor: checked ? "rgba(200,169,110,0.1)" : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${checked ? "rgba(200,169,110,0.6)" : "rgba(200,169,110,0.2)"}`,
+                        color: checked ? "var(--sand)" : "var(--ash-dim)",
+                        fontFamily: "var(--font-body)",
+                        fontSize: "0.85rem",
+                        letterSpacing: "0.04em",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "border-color 0.15s, background-color 0.15s, color 0.15s",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: "14px",
+                          height: "14px",
+                          flexShrink: 0,
+                          border: `1px solid ${checked ? "var(--sand)" : "rgba(200,169,110,0.35)"}`,
+                          backgroundColor: checked ? "var(--sand)" : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "background-color 0.15s, border-color 0.15s",
+                        }}
+                      >
+                        {checked && (
+                          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                            <path d="M1 3l2 2 4-4" stroke="#0f150f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </span>
+                      {a.title}
+                    </button>
+                  );
+                })}
+              </div>
+              {activityError && (
+                <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "0.5rem" }}>
+                  Pasirinkite bent vieną veiklą.
+                </p>
+              )}
+            </div>
+
+            {/* Row 4: comments */}
             <div className="mb-8">
-              <label htmlFor="activity" style={labelStyle}>Norima veikla</label>
-              <div style={{ position: "relative" }}>
-                <select
-                  id="activity"
-                  name="activity"
-                  required
-                  value={form.activity}
-                  onChange={handleChange}
+              <label htmlFor="comments" style={labelStyle}>
+                Komentarai <span style={{ color: "rgba(200,169,110,0.5)", fontWeight: 400 }}>(neprivaloma)</span>
+              </label>
+              <textarea
+                id="comments"
+                name="comments"
+                value={form.comments}
+                onChange={handleChange}
+                rows={4}
+                placeholder="pavyzdžiui: komandos dydis, veiklos trukmė, biudžetas"
+                style={{
+                  ...inputStyle,
+                  resize: "vertical",
+                  minHeight: "110px",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
+                onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
+              />
+            </div>
+
+            {/* GDPR consent */}
+            <div className="mb-5 flex flex-col gap-3">
+              {/* Consent 1 — required */}
+              <button
+                type="button"
+                onClick={() => {
+                  setConsent((v) => !v);
+                  if (!consent) setConsentError(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                  padding: "0.75rem 1rem",
+                  backgroundColor: consent ? "rgba(200,169,110,0.08)" : "rgba(255,255,255,0.02)",
+                  border: `1px solid ${consentError && !consent ? "rgba(224,92,92,0.6)" : consent ? "rgba(200,169,110,0.5)" : "rgba(200,169,110,0.18)"}`,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "border-color 0.15s, background-color 0.15s",
+                }}
+              >
+                <span
                   style={{
-                    ...inputStyle,
-                    paddingRight: "2.5rem",
-                    cursor: "pointer",
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c8a96e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "calc(100% - 1rem) center",
+                    width: "14px",
+                    height: "14px",
+                    flexShrink: 0,
+                    marginTop: "0.15rem",
+                    border: `1px solid ${consentError && !consent ? "rgba(224,92,92,0.7)" : consent ? "var(--sand)" : "rgba(200,169,110,0.35)"}`,
+                    backgroundColor: consent ? "var(--sand)" : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "background-color 0.15s, border-color 0.15s",
                   }}
                 >
-                  <option value="" disabled style={{ backgroundColor: "#0f150f" }}>
-                    Pasirink veiklą...
-                  </option>
-                  {activities
-                    .filter((a) => a.id !== "classified")
-                    .map((a) => (
-                      <option key={a.id} value={a.id} style={{ backgroundColor: "#0f150f" }}>
-                        {a.title}
-                      </option>
-                    ))}
-                  <option value="classified" style={{ backgroundColor: "#0f150f" }}>
-                    ??? Classified
-                  </option>
-                  <option value="kita" style={{ backgroundColor: "#0f150f" }}>
-                    Kita / Nesuprantu — paaiškinkite man
-                  </option>
-                </select>
-              </div>
+                  {consent && (
+                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                      <path d="M1 3l2 2 4-4" stroke="#0f150f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: "0.78rem",
+                    letterSpacing: "0.03em",
+                    color: consentError && !consent ? "#e07070" : consent ? "var(--ash)" : "var(--ash-dim)",
+                    lineHeight: 1.55,
+                    transition: "color 0.15s",
+                  }}
+                >
+                  Sutinku, kad mano duomenys būtų naudojami susisiekti su manimi dėl užklausos.{" "}
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setShowPolicy(true); }}
+                    style={{
+                      color: "var(--sand)",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Privatumo politika
+                  </span>
+                </span>
+              </button>
+
+              {consentError && !consent && (
+                <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "-0.5rem" }}>
+                  Prašome patvirtinti sutikimą prieš siunčiant.
+                </p>
+              )}
+
+              {/* Consent 2 — optional */}
+              <button
+                type="button"
+                onClick={() => setConsentMarketing((v) => !v)}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                  padding: "0.75rem 1rem",
+                  backgroundColor: consentMarketing ? "rgba(200,169,110,0.08)" : "rgba(255,255,255,0.02)",
+                  border: `1px solid ${consentMarketing ? "rgba(200,169,110,0.5)" : "rgba(200,169,110,0.18)"}`,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "border-color 0.15s, background-color 0.15s",
+                }}
+              >
+                <span
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    flexShrink: 0,
+                    marginTop: "0.15rem",
+                    border: `1px solid ${consentMarketing ? "var(--sand)" : "rgba(200,169,110,0.35)"}`,
+                    backgroundColor: consentMarketing ? "var(--sand)" : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "background-color 0.15s, border-color 0.15s",
+                  }}
+                >
+                  {consentMarketing && (
+                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                      <path d="M1 3l2 2 4-4" stroke="#0f150f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: "0.78rem",
+                    letterSpacing: "0.03em",
+                    color: consentMarketing ? "var(--ash)" : "var(--ash-dim)",
+                    lineHeight: 1.55,
+                    transition: "color 0.15s",
+                  }}
+                >
+                  Sutinku gauti pasiūlymus ir naujienas ateityje.
+                </span>
+              </button>
             </div>
 
             {/* Submit */}
@@ -329,78 +577,8 @@ export default function CtaSection() {
                 cursor: status === "submitting" ? "not-allowed" : "pointer",
               }}
             >
-              {status === "submitting" ? "SIUNČIAMA..." : "REGISTRUOTIS"}
+              {status === "submitting" ? "SIUNČIAMA..." : "GAUTI PASIŪLYMĄ"}
             </button>
-
-            {/* GDPR consent */}
-            <div className="mt-4">
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.65rem",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(e) => {
-                    setConsent(e.target.checked);
-                    if (e.target.checked) setConsentError(false);
-                  }}
-                  style={{
-                    marginTop: "0.15rem",
-                    flexShrink: 0,
-                    accentColor: "var(--sand)",
-                    width: "1rem",
-                    height: "1rem",
-                    cursor: "pointer",
-                  }}
-                />
-                <span
-                  style={{
-                    fontFamily: "var(--font-body)",
-                    fontSize: "0.75rem",
-                    letterSpacing: "0.04em",
-                    color: consentError ? "#e07070" : "var(--ash-dim)",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Sutinku, kad mano duomenys būtų naudojami susisiekimui dėl stovyklos ir galimų naujienlaiškių.{" "}
-                  <button
-                    type="button"
-                    onClick={() => setShowPolicy(true)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      color: "var(--sand)",
-                      fontFamily: "var(--font-body)",
-                      fontSize: "0.75rem",
-                      letterSpacing: "0.04em",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                    }}
-                  >
-                    Privatumo politika
-                  </button>
-                </span>
-              </label>
-              {consentError && (
-                <p
-                  style={{
-                    fontFamily: "var(--font-body)",
-                    fontSize: "0.7rem",
-                    color: "#e07070",
-                    marginTop: "0.4rem",
-                    letterSpacing: "0.04em",
-                  }}
-                >
-                  Prašome patvirtinti sutikimą prieš registruojantis.
-                </p>
-              )}
-            </div>
           </form>
         )}
 

@@ -89,6 +89,7 @@ export default function Hero() {
         {/* CTA group */}
         <div className="flex flex-wrap gap-4 items-center">
           <Link
+            id="hero-cta"
             href="#registracija"
             className="cta-btn"
             onMouseEnter={() => setTriggerKey((k) => k + 1)}

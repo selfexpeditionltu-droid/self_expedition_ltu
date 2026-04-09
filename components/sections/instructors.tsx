@@ -139,7 +139,6 @@ export default function Instructors() {
                     className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-16"
                     style={{
                       background: "linear-gradient(to top, rgba(10,10,8,0.92) 0%, transparent 100%)",
-                      transition: "opacity 300ms ease",
                       opacity: isActive ? 0 : 1,
                     }}
                   >
@@ -157,13 +156,14 @@ export default function Instructors() {
                     </p>
                   </div>
 
-                  {/* Slide-up bio overlay */}
+                  {/* Fade-in bio overlay */}
                   <div
                     className="absolute inset-0 flex flex-col justify-end px-5 pb-5 pt-8"
                     style={{
                       backgroundColor: "rgba(10,10,8,0.93)",
-                      transform: isActive ? "translateY(0)" : "translateY(100%)",
-                      transition: "transform 420ms cubic-bezier(0.32, 0, 0.2, 1)",
+                      opacity: isActive ? 1 : 0,
+                      pointerEvents: isActive ? "auto" : "none",
+                      transition: "opacity 300ms ease",
                       borderTop: "1px solid rgba(200,169,110,0.2)",
                     }}
                   >

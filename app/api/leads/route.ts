@@ -27,6 +27,7 @@ interface LeadData {
   phone: string;
   email: string;
   activity: string;
+  comments?: string;
 }
 
 async function sendEmailNotification(lead: LeadData) {
@@ -50,7 +51,8 @@ async function sendEmailNotification(lead: LeadData) {
           <tr style="background:#f9f9f9"><td style="padding: 8px; font-weight: bold;">Tel. numeris</td><td style="padding: 8px;">${lead.phone}</td></tr>
           <tr><td style="padding: 8px; font-weight: bold;">El. paštas</td><td style="padding: 8px;">${lead.email}</td></tr>
           <tr style="background:#f9f9f9"><td style="padding: 8px; font-weight: bold;">Veikla</td><td style="padding: 8px;">${lead.activity}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold;">Data</td><td style="padding: 8px;">${new Date().toLocaleString("lt-LT", { timeZone: "Europe/Vilnius" })}</td></tr>
+          ${lead.comments ? `<tr><td style="padding: 8px; font-weight: bold;">Komentarai</td><td style="padding: 8px;">${lead.comments}</td></tr>` : ""}
+          <tr style="background:#f9f9f9"><td style="padding: 8px; font-weight: bold;">Data</td><td style="padding: 8px;">${new Date().toLocaleString("lt-LT", { timeZone: "Europe/Vilnius" })}</td></tr>
         </table>
       </div>
     `,
@@ -76,7 +78,7 @@ async function appendToGoogleSheet(lead: LeadData) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: "Sheet1!A:F",
+    range: "Sheet1!A:G",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -87,6 +89,7 @@ async function appendToGoogleSheet(lead: LeadData) {
           lead.phone,
           lead.email,
           lead.activity,
+          lead.comments ?? "",
         ],
       ],
     },
@@ -114,13 +117,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, lastname, phone, email, activity } = body as LeadData;
+    const { name, lastname, phone, email, activity, comments } = body as LeadData;
 
     if (!name || !lastname || !phone || !email || !activity) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const lead: LeadData = { name, lastname, phone, email, activity };
+    const lead: LeadData = { name, lastname, phone, email, activity, comments };
 
     const results = await Promise.allSettled([
       sendEmailNotification(lead),

@@ -4,10 +4,10 @@ import About from "@/components/sections/about";
 import Instructors from "@/components/sections/instructors";
 import Activities from "@/components/sections/activities";
 import SocialProof from "@/components/sections/social-proof";
-import Duk from "@/components/sections/duk";
 import CalendlySection from "@/components/sections/calendly-section";
 import CtaSection from "@/components/sections/cta-section";
 import Footer from "@/components/sections/footer";
+import StickyCta from "@/components/ui/sticky-cta";
 
 export default function Home() {
   return (
@@ -18,10 +18,10 @@ export default function Home() {
       <Instructors />
       <Activities />
       <SocialProof />
-      <Duk />
       <CalendlySection />
       <CtaSection />
       <Footer />
+      <StickyCta />
     </main>
   );
 }
