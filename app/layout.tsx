@@ -25,7 +25,23 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Self Expedition LTU",
     description: "Perženk savo ribas. Taktinės stovyklos Lietuvoje.",
+    url: "https://selfexpedition.lt",
+    siteName: "Self Expedition LTU",
     type: "website",
+    images: [
+      {
+        url: "https://selfexpedition.lt/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Self Expedition LTU — Perženk savo ribas",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Self Expedition LTU",
+    description: "Perženk savo ribas. Taktinės stovyklos Lietuvoje.",
+    images: ["https://selfexpedition.lt/og-image.png"],
   },
 };
 
