@@ -38,7 +38,7 @@ export default function Nav() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-3 group"
+          className="flex items-center gap-3 group cursor-pointer"
           aria-label="Self Expedition — pagrindinis puslapis"
         >
           <img
