@@ -7,6 +7,24 @@ const RATE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const RATE_MAX = 5;
 const ipMap = new Map<string, { count: number; resetAt: number }>();
 
+// ── Cached clients (reused across warm invocations) ──────────────────────────
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
+
+const sheetsAuth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  },
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+});
+const sheetsClient = google.sheets({ version: "v4", auth: sheetsAuth });
+
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const entry = ipMap.get(ip);
@@ -31,14 +49,6 @@ interface LeadData {
 }
 
 async function sendEmailNotification(lead: LeadData) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
-
   await transporter.sendMail({
     from: `"Self Expedition" <${process.env.GMAIL_USER}>`,
     to: NOTIFICATION_EMAIL,
@@ -60,23 +70,10 @@ async function sendEmailNotification(lead: LeadData) {
 }
 
 async function appendToGoogleSheet(lead: LeadData) {
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const sheetId = process.env.LEADS_SHEET_ID;
+  if (!sheetId) return;
 
-  if (!privateKey || !clientEmail || !sheetId) return;
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: clientEmail,
-      private_key: privateKey,
-    },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-
-  const sheets = google.sheets({ version: "v4", auth });
-
-  await sheets.spreadsheets.values.append({
+  await sheetsClient.spreadsheets.values.append({
     spreadsheetId: sheetId,
     range: "Sheet1!A:G",
     valueInputOption: "USER_ENTERED",
