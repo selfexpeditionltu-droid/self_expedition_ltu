@@ -52,7 +52,7 @@ export default function ConsentManager() {
     <>
       {/* ── Analytics scripts — loaded ONLY after explicit consent ── */}
 
-      {consent === "accepted" && GTM_ID && (
+      {consent !== "declined" && GTM_ID && (
         <Script id="gtm-init" strategy="afterInteractive">{`
 (function(w,d,s,l,i){
   w[l]=w[l]||[];
@@ -67,7 +67,7 @@ export default function ConsentManager() {
         `}</Script>
       )}
 
-      {consent === "accepted" && GA4_ID && (
+      {consent !== "declined" && GA4_ID && (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}
@@ -82,7 +82,7 @@ gtag('config','${GA4_ID}',{anonymize_ip:true});
         </>
       )}
 
-      {consent === "accepted" && PIXEL_ID && (
+      {consent !== "declined" && PIXEL_ID && (
         <Script id="meta-pixel-init" strategy="afterInteractive">{`
 !function(f,b,e,v,n,t,s){
   if(f.fbq)return;
