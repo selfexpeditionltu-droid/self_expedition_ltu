@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   description:
     "Taktinės išgyvenimo stovyklos, šaudymas, žygiai ir komandinis ugdymas Lietuvoje. Registruokis dabar.",
   keywords: ["survival camp", "išgyvenimo stovykla", "šaudymas", "bernvakaris", "žygis", "Lietuva"],
+  metadataBase: new URL("https://selfexpedition.lt"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Self Expedition LTU",
     description: "Perženk savo ribas. Taktinės stovyklos Lietuvoje.",
