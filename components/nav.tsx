@@ -3,15 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL ?? "";
-
 const links = [
   { label: "Apie", href: "#apie" },
   { label: "Instruktoriai", href: "#instruktoriai" },
   { label: "Veiklos", href: "#veiklos" },
   { label: "Galerija", href: "/galerija" },
   { label: "D.U.K.", href: "/duk" },
-  ...(CALENDLY_URL ? [{ label: "Pokalbis", href: "#pokalbis" }] : []),
   { label: "Kontaktai", href: "#footer" },
 ];
 

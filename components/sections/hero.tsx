@@ -93,7 +93,7 @@ export default function Hero() {
             href="#registracija"
             className="cta-btn"
             onMouseEnter={() => setTriggerKey((k) => k + 1)}
-            onClick={() => trackEvent("hero_cta_click")}
+            onClick={() => trackEvent("cta_click", { button_location: "hero" })}
           >
             <TextScramble
               text="GAUTI PASIŪLYMĄ"

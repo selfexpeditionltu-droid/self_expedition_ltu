@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import GalleryCta from "@/components/ui/gallery-cta";
 
 export const metadata: Metadata = {
   title: "Galerija — Self Expedition LTU",
@@ -157,13 +158,7 @@ export default function GalerijaPage() {
           >
             Užsiregistruok ir sukurk savo atsiminimai.
           </p>
-          <Link
-            href="/#registracija"
-            className="cta-btn inline-block"
-            style={{ fontSize: "1rem" }}
-          >
-            Gauti pasiūlymą
-          </Link>
+          <GalleryCta />
         </div>
       </div>
     </main>

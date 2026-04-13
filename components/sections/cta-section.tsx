@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { activities } from "@/lib/activities";
 import { trackEvent, trackLead } from "@/lib/track";
 
-const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL ?? "";
-
 type FormState = "idle" | "submitting" | "success" | "error";
 
 const PRIVACY_POLICY = `PRIVATUMO POLITIKA
@@ -109,7 +107,6 @@ export default function CtaSection() {
     if (nameErr || lastnameErr || phoneErr || emailErr || noActivity || !consent) return;
     setConsentError(false);
     setStatus("submitting");
-    trackEvent("registration_form_submit", { activity: form.activities.join(", ") });
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
@@ -117,6 +114,7 @@ export default function CtaSection() {
         body: JSON.stringify({ ...form, activity: form.activities.join(", "), consentMarketing }),
       });
       if (!res.ok) throw new Error("Request failed");
+      trackEvent("qualify_lead", { activity: form.activities.join(", ") });
       trackLead({ activity: form.activities.join(", ") });
       setStatus("success");
     } catch {
@@ -188,22 +186,7 @@ export default function CtaSection() {
             <br />
             <span style={{ color: "var(--sand)" }}>VEIKTI.</span>
           </h2>
-          {/* Calendly shortcut */}
-          {CALENDLY_URL && (
-            <p
-              className="font-body text-sm mt-6"
-              style={{ color: "var(--ash-dim)" }}
-            >
-              Dar turite klausimų?{" "}
-              <a
-                href="#pokalbis"
-                onClick={() => trackEvent("calendly_link_click")}
-                style={{ color: "var(--sand)", textDecoration: "underline" }}
-              >
-                Rezervuokite nemokamą pokalbį →
-              </a>
-            </p>
-          )}
+
         </div>
 
         {/* Form */}

@@ -28,7 +28,7 @@ export default function Activities() {
   };
 
   const handleRegister = (id: string) => {
-    trackEvent("activity_card_click", { activity: id });
+    trackEvent("cta_click", { button_location: "activity", activity: id });
     window.dispatchEvent(new CustomEvent("se:selectActivity", { detail: id }));
     document.getElementById("registracija")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -79,7 +79,7 @@ export default function Activities() {
               <div
                 key={activity.id}
                 className={`relative col-span-1 sm:col-span-1 ${colSpan}`}
-                style={{ perspective: "1000px", minHeight: "320px" }}
+                style={{ perspective: "1000px", minHeight: "360px" }}
               >
                 {/* Flip container */}
                 <div
@@ -88,7 +88,7 @@ export default function Activities() {
                     transformStyle: "preserve-3d",
                     transition: "transform 0.55s ease",
                     transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-                    minHeight: "320px",
+                    minHeight: "360px",
                   }}
                 >
                   {/* FRONT */}
@@ -136,15 +136,21 @@ export default function Activities() {
                       {activity.title}
                     </h3>
                     <p
-                      className="font-body text-sm leading-relaxed"
-                      style={{ color: "var(--ash-dim)" }}
+                      className="font-body text-sm leading-relaxed flex-1"
+                      style={{
+                        color: "var(--ash-dim)",
+                        overflow: "hidden",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical",
+                      }}
                     >
                       {activity.subtitle}
                     </p>
 
                     {/* Flip hint */}
                     <p
-                      className="absolute bottom-6 left-8 font-body text-xs uppercase"
+                      className="font-body text-xs uppercase mt-4 shrink-0"
                       style={{ color: "rgba(200,169,110,0.5)", letterSpacing: "0.12em" }}
                     >
                       Spausk daugiau info →

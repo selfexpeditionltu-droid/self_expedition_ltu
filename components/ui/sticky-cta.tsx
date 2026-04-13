@@ -78,7 +78,7 @@ export default function StickyCta() {
       <a
         href="#registracija"
         className="cta-btn"
-        onClick={() => trackEvent("sticky_cta_click")}
+        onClick={() => trackEvent("cta_click", { button_location: "sticky" })}
         style={{
           fontSize: "1rem",
           padding: "0.75rem 2.5rem",
