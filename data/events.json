@@ -1,0 +1,43 @@
+{
+  "_instructions": {
+    "how_to_add_event": "Copy one of the event objects below and paste it inside the 'events' array. Change the values to match your new event. The 'id' must be unique - use the date + short name, e.g. '2026-08-15-rapel'.",
+    "date_format": "YYYY-MM-DD  (year-month-day), e.g. '2026-07-06' for July 6 2026",
+    "spots": "Leave as null if spots are unlimited or unknown"
+  },
+  "events": [
+    {
+      "id": "2026-07-06-bundle",
+      "date": "2026-07-06",
+      "title": "Vasaros Ekspedicija",
+      "activities": [
+        "Nusileidimas virve nuo tilto",
+        "Mokysimės orientuotis žemėlapiu ir kompasu, įveiksime žygį",
+        "Mokysimės ugnies įkūrimo"
+      ],
+      "price_eur": 120,
+      "time": "10:00–18:00",
+      "duration": "8 val.",
+      "location": "Kaišiadorių raj.",
+      "capacity": 20,
+      "spots_override": null,
+      "registration_link": "#registracija"
+    },
+    {
+      "id": "2026-09-06-bundle",
+      "date": "2026-09-06",
+      "title": "Rugsėjo Ekspedicija",
+      "activities": [
+        "Nusileidimas virve nuo tilto",
+        "Mokysimės orientuotis žemėlapiu ir kompasu, įveiksime žygį",
+        "Mokysimės ugnies įkūrimo"
+      ],
+      "price_eur": 120,
+      "time": "10:00–18:00",
+      "duration": "8 val.",
+      "location": "Kaišiadorių raj.",
+      "capacity": 20,
+      "spots_override": null,
+      "registration_link": "#registracija"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import Hero from "@/components/sections/hero";
 import About from "@/components/sections/about";
 import Instructors from "@/components/sections/instructors";
 import Activities from "@/components/sections/activities";
+import CalendarSection from "@/components/sections/calendar-section";
 import SocialProof from "@/components/sections/social-proof";
 import CtaSection from "@/components/sections/cta-section";
 import Footer from "@/components/sections/footer";
@@ -17,6 +18,7 @@ export default function Home() {
       <About />
       <Instructors />
       <Activities />
+      <CalendarSection />
       <SocialProof />
       <CtaSection />
       <Footer />

@@ -17,7 +17,10 @@
       "Bash(cmd.exe /c \"where php\")",
       "Bash(powershell.exe -ExecutionPolicy Bypass -Command \"Write-Host ''test''\")",
       "Bash(powershell.exe -ExecutionPolicy Bypass -Command \"& { try { $l = New-Object System.Net.HttpListener; $l.Prefixes.Add\\(''http://localhost:3000/''\\); $l.Start\\(\\); Write-Host ''OK''; $l.Stop\\(\\) } catch { Write-Host $_.Exception.Message } }\")",
-      "Bash(powershell.exe -Command \"Stop-Process -Id \\(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue\\).OwningProcess -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell.exe -Command \"Stop-Process -Id \\(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue\\).OwningProcess -Force -ErrorAction SilentlyContinue\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(netstat -ano)"
     ]
   }
 }

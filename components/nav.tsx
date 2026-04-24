@@ -7,6 +7,7 @@ const links = [
   { label: "Apie", href: "#apie" },
   { label: "Instruktoriai", href: "#instruktoriai" },
   { label: "Veiklos", href: "#veiklos" },
+  { label: "Kalendorius", href: "#kalendorius" },
   { label: "Galerija", href: "/galerija" },
   { label: "D.U.K.", href: "/duk" },
   { label: "Kontaktai", href: "#footer" },

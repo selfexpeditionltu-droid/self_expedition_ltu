@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { activities } from "@/lib/activities";
+import { type CalendarEvent } from "@/lib/events";
 import { trackEvent, trackLead } from "@/lib/track";
 
 type FormState = "idle" | "submitting" | "success" | "error";
@@ -35,6 +36,7 @@ export default function CtaSection() {
     lastname: "",
     phone: "",
     email: "",
+    groupSize: 1,
     activities: [] as string[],
     comments: "",
   });
@@ -45,20 +47,39 @@ export default function CtaSection() {
   const [showPolicy, setShowPolicy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({ name: "", lastname: "", phone: "", email: "" });
   const [activityError, setActivityError] = useState(false);
+  const [calendarBooking, setCalendarBooking] = useState<CalendarEvent | null>(null);
 
   /* Listen for activity pre-selection from the Activities section */
   useEffect(() => {
     const handler = (e: Event) => {
       const activityId = (e as CustomEvent<string>).detail;
+      setCalendarBooking(null);
       setForm((prev) => ({
         ...prev,
         activities: prev.activities.includes(activityId)
           ? prev.activities
           : [...prev.activities, activityId],
+        comments: "",
       }));
     };
     window.addEventListener("se:selectActivity", handler);
     return () => window.removeEventListener("se:selectActivity", handler);
+  }, []);
+
+  /* Listen for calendar event registration */
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ev = (e as CustomEvent<CalendarEvent>).detail;
+      setCalendarBooking(ev);
+      setActivityError(false);
+      setForm((prev) => ({
+        ...prev,
+        activities: [],
+        comments: "",
+      }));
+    };
+    window.addEventListener("se:selectCalendarEvent", handler);
+    return () => window.removeEventListener("se:selectCalendarEvent", handler);
   }, []);
 
   const validatePhone = (value: string) => {
@@ -100,22 +121,33 @@ export default function CtaSection() {
     const lastnameErr = form.lastname.trim() ? "" : "Įveskite savo pavardę.";
     const phoneErr = validatePhone(form.phone);
     const emailErr = validateEmail(form.email);
-    const noActivity = form.activities.length === 0;
+    const noActivity = !calendarBooking && form.activities.length === 0;
     setFieldErrors({ name: nameErr, lastname: lastnameErr, phone: phoneErr, email: emailErr });
     setActivityError(noActivity);
     if (!consent) setConsentError(true);
     if (nameErr || lastnameErr || phoneErr || emailErr || noActivity || !consent) return;
     setConsentError(false);
     setStatus("submitting");
+
+    const activityLabel = calendarBooking
+      ? `KALENDORIUS: ${calendarBooking.title} — ${calendarBooking.date} (${calendarBooking.time}, ${calendarBooking.location}, ${calendarBooking.price_eur} EUR)`
+      : form.activities.join(", ");
+
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, activity: form.activities.join(", "), consentMarketing }),
+        body: JSON.stringify({
+          ...form,
+          activity: activityLabel,
+          groupSize: form.groupSize,
+          eventId: calendarBooking?.id ?? "",
+          consentMarketing,
+        }),
       });
       if (!res.ok) throw new Error("Request failed");
-      trackEvent("qualify_lead", { activity: form.activities.join(", ") });
-      trackLead({ activity: form.activities.join(", ") });
+      trackEvent("qualify_lead", { activity: activityLabel });
+      trackLead({ activity: activityLabel });
       setStatus("success");
     } catch {
       setStatus("error");
@@ -346,84 +378,279 @@ export default function CtaSection() {
               </div>
             </div>
 
-            {/* Row 3: activity multi-select */}
-            <div className="mb-5">
-              <label style={labelStyle}>Norima veikla <span style={{ color: "rgba(200,169,110,0.5)", fontWeight: 400 }}>(galima rinktis kelias)</span></label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {activities.map((a) => {
-                  const checked = form.activities.includes(a.id);
-                  return (
+            {/* Row 3: group size stepper */}
+            {(() => {
+              const isLarge = form.groupSize > 20;
+              const stepperBtn: React.CSSProperties = {
+                width: "2.6rem",
+                height: "2.6rem",
+                backgroundColor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(200,169,110,0.25)",
+                color: "var(--sand)",
+                fontFamily: "var(--font-display)",
+                fontSize: "1.3rem",
+                lineHeight: 1,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                transition: "border-color 0.15s, background-color 0.15s",
+              };
+              return (
+                <div className="mb-5">
+                  <label style={labelStyle}>Grupės dydis</label>
+                  <div className="flex items-center gap-3">
                     <button
-                      key={a.id}
                       type="button"
-                      onClick={() => toggleActivity(a.id)}
+                      onClick={() => setForm((prev) => ({ ...prev, groupSize: Math.max(1, prev.groupSize - 1) }))}
+                      disabled={form.groupSize <= 1}
+                      style={{ ...stepperBtn, opacity: form.groupSize <= 1 ? 0.3 : 1, cursor: form.groupSize <= 1 ? "default" : "pointer" }}
+                    >
+                      −
+                    </button>
+
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={isLarge ? "20+" : String(form.groupSize)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, "");
+                        if (raw === "") { setForm((prev) => ({ ...prev, groupSize: 1 })); return; }
+                        const n = Math.min(21, Math.max(1, parseInt(raw, 10)));
+                        setForm((prev) => ({ ...prev, groupSize: n }));
+                      }}
+                      onFocus={(e) => { if (isLarge) e.target.select(); }}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.6rem",
-                        padding: "0.65rem 0.9rem",
-                        backgroundColor: checked ? "rgba(200,169,110,0.1)" : "rgba(255,255,255,0.03)",
-                        border: `1px solid ${checked ? "rgba(200,169,110,0.6)" : "rgba(200,169,110,0.2)"}`,
-                        color: checked ? "var(--sand)" : "var(--ash-dim)",
+                        width: "5rem",
+                        height: "2.6rem",
+                        backgroundColor: "rgba(200,169,110,0.06)",
+                        border: "1px solid rgba(200,169,110,0.4)",
+                        color: "var(--sand)",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "1.4rem",
+                        letterSpacing: "0.06em",
+                        textAlign: "center",
+                        outline: "none",
+                        padding: 0,
+                        lineHeight: "2.6rem",
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, groupSize: Math.min(21, prev.groupSize + 1) }))}
+                      disabled={isLarge}
+                      style={{ ...stepperBtn, opacity: isLarge ? 0.3 : 1, cursor: isLarge ? "default" : "pointer" }}
+                    >
+                      +
+                    </button>
+
+                    {isLarge && (
+                      <span
+                        className="font-body text-xs"
+                        style={{ color: "var(--sand-dim)", letterSpacing: "0.06em", lineHeight: 1.5 }}
+                      >
+                        Didelei grupei<br />susisieksime atskirai
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Row 4: activity — locked calendar card OR free-choice grid */}
+            <div className="mb-5">
+              {calendarBooking ? (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <label style={labelStyle}>Renginys</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCalendarBooking(null);
+                        setForm((prev) => ({ ...prev, activities: [], comments: "" }));
+                      }}
+                      style={{
                         fontFamily: "var(--font-body)",
-                        fontSize: "0.85rem",
-                        letterSpacing: "0.04em",
+                        fontSize: "0.68rem",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        color: "var(--ash-dim)",
+                        background: "none",
+                        border: "none",
                         cursor: "pointer",
-                        textAlign: "left",
-                        transition: "border-color 0.15s, background-color 0.15s, color 0.15s",
+                        padding: 0,
                       }}
                     >
-                      <span
-                        style={{
-                          width: "14px",
-                          height: "14px",
-                          flexShrink: 0,
-                          border: `1px solid ${checked ? "var(--sand)" : "rgba(200,169,110,0.35)"}`,
-                          backgroundColor: checked ? "var(--sand)" : "transparent",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          transition: "background-color 0.15s, border-color 0.15s",
-                        }}
-                      >
-                        {checked && (
-                          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                            <path d="M1 3l2 2 4-4" stroke="#0f150f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </span>
-                      {a.title}
+                      ← Keisti veiklą
                     </button>
-                  );
-                })}
-              </div>
-              {activityError && (
-                <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "0.5rem" }}>
-                  Pasirinkite bent vieną veiklą.
-                </p>
+                  </div>
+                  <div
+                    style={{
+                      backgroundColor: "rgba(200,169,110,0.06)",
+                      border: "1px solid rgba(200,169,110,0.4)",
+                      padding: "1rem 1.1rem",
+                    }}
+                  >
+                    {/* Event title + date */}
+                    <p
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        fontSize: "1.25rem",
+                        letterSpacing: "0.08em",
+                        color: "var(--sand)",
+                        marginBottom: "0.35rem",
+                      }}
+                    >
+                      {calendarBooking.title.toUpperCase()}
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontSize: "0.8rem",
+                        color: "var(--ash-dim)",
+                        letterSpacing: "0.06em",
+                        marginBottom: "0.6rem",
+                      }}
+                    >
+                      {calendarBooking.date} &nbsp;·&nbsp; {calendarBooking.time} &nbsp;·&nbsp; {calendarBooking.location} &nbsp;·&nbsp; {calendarBooking.price_eur} EUR / asm.
+                    </p>
+                    {/* Activity list */}
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {calendarBooking.activities.map((act, i) => (
+                        <li
+                          key={i}
+                          style={{
+                            fontFamily: "var(--font-body)",
+                            fontSize: "0.82rem",
+                            color: "var(--ash)",
+                            letterSpacing: "0.03em",
+                            lineHeight: 1.6,
+                            paddingLeft: "1.1rem",
+                            position: "relative",
+                          }}
+                        >
+                          <span
+                            style={{
+                              position: "absolute",
+                              left: 0,
+                              color: "var(--sand)",
+                              fontFamily: "var(--font-display)",
+                            }}
+                          >
+                            {i + 1}.
+                          </span>
+                          {act}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <label style={labelStyle}>Norima veikla <span style={{ color: "rgba(200,169,110,0.5)", fontWeight: 400 }}>(galima rinktis kelias)</span></label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {activities.map((a) => {
+                      const checked = form.activities.includes(a.id);
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => toggleActivity(a.id)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.6rem",
+                            padding: "0.65rem 0.9rem",
+                            backgroundColor: checked ? "rgba(200,169,110,0.1)" : "rgba(255,255,255,0.03)",
+                            border: `1px solid ${checked ? "rgba(200,169,110,0.6)" : "rgba(200,169,110,0.2)"}`,
+                            color: checked ? "var(--sand)" : "var(--ash-dim)",
+                            fontFamily: "var(--font-body)",
+                            fontSize: "0.85rem",
+                            letterSpacing: "0.04em",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            transition: "border-color 0.15s, background-color 0.15s, color 0.15s",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "14px",
+                              flexShrink: 0,
+                              border: `1px solid ${checked ? "var(--sand)" : "rgba(200,169,110,0.35)"}`,
+                              backgroundColor: checked ? "var(--sand)" : "transparent",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "background-color 0.15s, border-color 0.15s",
+                            }}
+                          >
+                            {checked && (
+                              <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                                <path d="M1 3l2 2 4-4" stroke="#0f150f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </span>
+                          {a.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {activityError && (
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "#e07070", letterSpacing: "0.04em", marginTop: "0.5rem" }}>
+                      Pasirinkite bent vieną veiklą.
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
             {/* Row 4: comments */}
             <div className="mb-8">
               <label htmlFor="comments" style={labelStyle}>
-                Komentarai <span style={{ color: "rgba(200,169,110,0.5)", fontWeight: 400 }}>(neprivaloma)</span>
+                {calendarBooking ? (
+                  <>Papildoma informacija <span style={{ color: "rgba(200,169,110,0.5)", fontWeight: 400 }}>(neprivaloma)</span></>
+                ) : (
+                  <>Komentarai <span style={{ color: "rgba(200,169,110,0.5)", fontWeight: 400 }}>(neprivaloma)</span></>
+                )}
               </label>
-              <textarea
-                id="comments"
-                name="comments"
-                value={form.comments}
-                onChange={handleChange}
-                rows={4}
-                placeholder="pavyzdžiui: komandos dydis, veiklos trukmė, biudžetas, patogi lokacija, data"
-                style={{
-                  ...inputStyle,
-                  resize: "vertical",
-                  minHeight: "110px",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
-                onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
-              />
+              {calendarBooking ? (
+                <textarea
+                  id="comments"
+                  name="comments"
+                  value={form.comments}
+                  onChange={handleChange}
+                  rows={6}
+                  placeholder=""
+                  style={{
+                    ...inputStyle,
+                    resize: "vertical",
+                    minHeight: "130px",
+                    color: "var(--ash-dim)",
+                    fontSize: "0.85rem",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
+                />
+              ) : (
+                <textarea
+                  id="comments"
+                  name="comments"
+                  value={form.comments}
+                  onChange={handleChange}
+                  rows={4}
+                  placeholder="pavyzdžiui: komandos dydis, veiklos trukmė, biudžetas, patogi lokacija, data"
+                  style={{
+                    ...inputStyle,
+                    resize: "vertical",
+                    minHeight: "110px",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "var(--sand)")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(200,169,110,0.25)")}
+                />
+              )}
             </div>
 
             {/* GDPR consent */}
