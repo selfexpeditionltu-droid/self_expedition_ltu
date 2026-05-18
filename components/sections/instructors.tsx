@@ -120,10 +120,10 @@ export default function Instructors() {
               return (
                 <div
                   key={person.id}
-                  className="relative overflow-hidden cursor-pointer select-none"
-                  style={{ aspectRatio: "3 / 4", backgroundColor: "var(--bg-elevated)" }}
-                  onMouseEnter={() => setActiveId(person.id)}
-                  onMouseLeave={() => setActiveId(null)}
+                  className="relative overflow-hidden cursor-pointer select-none aspect-[3/5] lg:aspect-[3/4]"
+                  style={{ backgroundColor: "var(--bg-elevated)" }}
+                  onPointerEnter={(e) => { if (e.pointerType === "mouse") setActiveId(person.id); }}
+                  onPointerLeave={(e) => { if (e.pointerType === "mouse") setActiveId(null); }}
                   onClick={() => setActiveId(isActive ? null : person.id)}
                 >
                   {/* Photo */}
@@ -158,7 +158,7 @@ export default function Instructors() {
 
                   {/* Fade-in bio overlay */}
                   <div
-                    className="absolute inset-0 flex flex-col justify-end px-5 pb-5 pt-8"
+                    className="absolute inset-0 flex flex-col justify-end px-5 pb-5 pt-8 overflow-y-auto"
                     style={{
                       backgroundColor: "rgba(10,10,8,0.93)",
                       opacity: isActive ? 1 : 0,
@@ -184,7 +184,7 @@ export default function Instructors() {
                       style={{ height: "1px", backgroundColor: "rgba(200,169,110,0.35)" }}
                     />
                     <p
-                      className="font-body text-sm leading-relaxed mb-3"
+                      className="font-body text-xs sm:text-sm leading-relaxed mb-3"
                       style={{ color: "var(--ash-dim)" }}
                     >
                       {person.courses}
