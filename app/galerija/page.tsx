@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const allPhotos = [
   { id: 1, src: "/materials/foto-1-5.jpg", caption: "Žygis per sniegą", type: "image" },
-  { id: 2, src: "/materials/copy_CECF4970-587C-41EF-9C7A-1F68C86D6FA3.mp4", caption: "Kovinis šaudymas", type: "video" },
+  { id: 2, src: "/materials/kovinis-saudymas.mp4", caption: "Kovinis šaudymas", type: "video" },
   { id: 3, src: "/materials/IMG_2445.JPG", caption: "Ugnies kurimas", type: "image" },
   { id: 4, src: "/materials/IMG_2548.JPG", caption: "Kovinis šaudymas", type: "image" },
   { id: 5, src: "/materials/IMG_4528.JPG", caption: "Psichologinis išgyvenimas", type: "image" },
