@@ -86,7 +86,9 @@ export default function CtaSection() {
     const digits = value.replace(/\D/g, "");
     if (!value.trim()) return "Įveskite telefono numerį.";
     if (!/^\+?[\d\s\-().]+$/.test(value)) return "Neteisingas telefono numerio formatas.";
-    if (digits.length !== 11) return "Neteisingas telefono numerio formatas.";
+    // Accept 9 digits (local: 6XXXXXXXX), 10 digits (local with 0: 06XXXXXXXX or 8XXXXXXXX+extra),
+    // or 11 digits (international: +37068XXXXXXX)
+    if (digits.length < 9 || digits.length > 12) return "Neteisingas telefono numerio formatas.";
     return "";
   };
 
@@ -125,7 +127,12 @@ export default function CtaSection() {
     setFieldErrors({ name: nameErr, lastname: lastnameErr, phone: phoneErr, email: emailErr });
     setActivityError(noActivity);
     if (!consent) setConsentError(true);
-    if (nameErr || lastnameErr || phoneErr || emailErr || noActivity || !consent) return;
+    if (nameErr || lastnameErr || phoneErr || emailErr || noActivity || !consent) {
+      const firstErrorId = nameErr ? "name" : lastnameErr ? "lastname" : phoneErr ? "phone" : emailErr ? "email" : noActivity ? "activities-section" : "consent-section";
+      const el = document.getElementById(firstErrorId);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setConsentError(false);
     setStatus("submitting");
 
@@ -460,7 +467,7 @@ export default function CtaSection() {
             })()}
 
             {/* Row 4: activity — locked calendar card OR free-choice grid */}
-            <div className="mb-5">
+            <div id="activities-section" className="mb-5">
               {calendarBooking ? (
                 <>
                   <div className="flex items-center justify-between mb-2">
@@ -654,7 +661,7 @@ export default function CtaSection() {
             </div>
 
             {/* GDPR consent */}
-            <div className="mb-5 flex flex-col gap-3">
+            <div id="consent-section" className="mb-5 flex flex-col gap-3">
               {/* Consent 1 — required */}
               <button
                 type="button"
